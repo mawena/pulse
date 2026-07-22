@@ -85,6 +85,17 @@ sudo systemctl enable --now pulse-reverb pulse-stream
 Dans `.env` de production :
 
 ```
+# ⚠️ INDISPENSABLE — sans ça, les événements partent dans les logs et
+# l'autorisation des canaux renvoie une réponse vide (temps réel muet,
+# badge LIVE mais aucune mise à jour)
+BROADCAST_CONNECTION=reverb
+
+# Identifiants de l'application (générer des valeurs aléatoires)
+REVERB_APP_ID=123456
+REVERB_APP_KEY=...       # openssl rand -hex 16
+REVERB_APP_SECRET=...    # openssl rand -hex 24
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+
 # Backend → Reverb local (publication des événements)
 REVERB_HOST=127.0.0.1
 REVERB_PORT=8080
@@ -138,6 +149,8 @@ sudo certbot --nginx -d pulse.mawena.cloud
 | Symptôme | Cause probable |
 |---|---|
 | `composer install` → « ext-dom / ext-xml is missing » | Plusieurs versions PHP installées : le CLI n'est pas celui attendu (vérifier les chemins `/etc/php/X.Y/cli/` dans l'erreur). Aligner le CLI sur la version FPM : `sudo update-alternatives --set php /usr/bin/php8.4`, puis `composer install --no-dev --optimize-autoloader` (jamais les dépendances dev en prod) |
+| Badge LIVE mais métriques figées (mise à jour seulement en changeant de page) | `BROADCAST_CONNECTION` ≠ `reverb` dans `.env` (souvent resté sur `log` depuis un ancien `.env.example`) : l'auth de canal renvoie 200 vide et les événements partent dans les logs. Corriger, `php artisan config:cache`, redémarrer `pulse-stream`. Vérifiable en simulant un client WS : l'auth doit renvoyer `{"auth":"…"}` |
+| `/api/*` récents en 404 après `git pull` | Cache de routes périmé → `php artisan optimize:clear && php artisan optimize` |
 | Kill/restart → « sudo: a password is required » | `install-security.sh` non exécuté ou mauvais utilisateur PHP-FPM dans sudoers |
 | Statuts services `unknown` | Unité systemd absente — ajuster `PULSE_SERVICE_*` dans `.env` |
 | CPU % reste vide | Normal au 1er appel (calcul par delta) ; vérifie le cache Laravel sinon |

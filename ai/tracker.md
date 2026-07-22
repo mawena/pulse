@@ -10,7 +10,7 @@
 - [x] **Phase 2 : Backend Laravel & Services Système** (100%)
 - [x] **Phase 3 : Frontend Vue 3 & Vuetify** (100%)
 - [x] **Phase 4 : Configuration Sudoers & Sécurité VPS** (100%)
-- [ ] **Phase 5 : Déploiement & Tests** (50% — livrables prêts, exécution sur le VPS restante)
+- [x] **Phase 5 : Déploiement & Tests** (100% — en production sur pulse.mawena.cloud, temps réel validé)
 
 ---
 
@@ -75,12 +75,11 @@
   - Défense en profondeur sur 3 couches : FormRequests (`KillProcessRequest`, `ServiceActionRequest` — Rule::in sur whitelists de config), services (re-validation + unités jamais issues de la requête + commandes en tableaux d'arguments sans shell), wrappers sudo (validation finale côté root).
 
 ### Phase 5 : Déploiement & Finalisation
-- [ ] Tester le déploiement sur le VPS sous `pulse.mawena.cloud`
+- [x] Tester le déploiement sur le VPS sous `pulse.mawena.cloud` — **déployé et fonctionnel** (2026-07-22). Incidents résolus pendant le déploiement, tous documentés dans DEPLOYMENT.md §Dépannage : CLI PHP 8.5 sans ext-dom (aligné sur 8.4), vieux Composer apt (notices cosmétiques), `laravel/reverb` absent (composer install non relancé après pull), clés `REVERB_APP_*` absentes du .env prod, cache de routes périmé, et **cause racine du temps réel muet : `BROADCAST_CONNECTION=log`** (auth de canal vide + événements envoyés aux logs). Diagnostic mené avec un client WebSocket Node simulant le navigateur (`diag-ws.mjs`).
   - ✅ Livrables prêts : `deploy/DEPLOYMENT.md` (procédure complète : DB, .env, migrations, build, sécurité, TLS certbot, dépannage), `deploy/nginx/pulse.mawena.cloud.conf` (vhost avec headers sécurité + cache assets), variables `PULSE_*` ajoutées au `.env.example`.
   - ⏳ Reste : exécuter la procédure sur le VPS (nécessite un accès au serveur).
-- [ ] Vérifier le comportement du polling / rafraîchissement temps réel sur le serveur live
-  - ✅ Checklist de validation post-déploiement rédigée dans `deploy/DEPLOYMENT.md` (§6).
-  - ⏳ Reste : validation sur le serveur live.
+- [x] Vérifier le comportement du polling / rafraîchissement temps réel sur le serveur live
+  - ✅ Validé en production : connexion WSS via nginx, auth de canal privé (Sanctum Bearer), souscription `private-metrics`, événements `MetricsUpdated` reçus toutes les 3 s à travers la chaîne publique complète.
 
 ---
 
