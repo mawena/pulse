@@ -53,6 +53,49 @@ it('gives the observer role read-only monitoring permissions', function () {
         ->and($user->hasPermissionTo('manage', 'system'))->toBeFalse();
 });
 
+it('blocks protected routes until the required password change is done', function () {
+    $user = User::factory()->create([
+        'password' => 'initial-password',
+        'activated' => true,
+        'password_change_required' => true,
+    ]);
+    $user->assignRole('admin');
+    \Laravel\Sanctum\Sanctum::actingAs($user);
+
+    // Bloqué tant que le mot de passe n'est pas changé (sub_code 002).
+    $this->getJson('/api/metrics')
+        ->assertForbidden()
+        ->assertJsonPath('errors.sub_code', '002');
+
+    // La route update-password reste accessible et débloque le compte.
+    $this->putJson('/api/users/update-password', [
+        'current_password' => 'initial-password',
+        'new_password' => 'new-secure-password',
+        'new_password_confirmation' => 'new-secure-password',
+    ])->assertOk();
+
+    expect($user->fresh()->password_change_required)->toBeFalse();
+    $this->getJson('/api/metrics')->assertOk();
+});
+
+it('rejects a password change with a wrong current password', function () {
+    $user = User::factory()->create([
+        'password' => 'initial-password',
+        'activated' => true,
+        'password_change_required' => true,
+    ]);
+    $user->assignRole('admin');
+    \Laravel\Sanctum\Sanctum::actingAs($user);
+
+    $this->putJson('/api/users/update-password', [
+        'current_password' => 'wrong-password',
+        'new_password' => 'new-secure-password',
+        'new_password_confirmation' => 'new-secure-password',
+    ])->assertUnprocessable();
+
+    expect($user->fresh()->password_change_required)->toBeTrue();
+});
+
 it('records audit log entries with the record helper', function () {
     $user = User::factory()->create();
 

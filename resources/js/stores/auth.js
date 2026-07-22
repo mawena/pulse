@@ -43,6 +43,25 @@ export const useAuthStore = defineStore('auth', {
             this.user = data.data;
         },
 
+        /**
+         * Changement de mot de passe (obligatoire à la 1ère connexion quand
+         * password_change_required est vrai — seule route autorisée par le
+         * middleware account.status avec logout).
+         */
+        async updatePassword(currentPassword, newPassword, confirmation) {
+            this.loading = true;
+            try {
+                await http.put('/users/update-password', {
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    new_password_confirmation: confirmation,
+                });
+                if (this.user) this.user.password_change_required = false;
+            } finally {
+                this.loading = false;
+            }
+        },
+
         async logout() {
             try {
                 await http.delete('/auth/logout');

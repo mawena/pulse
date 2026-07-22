@@ -26,6 +26,21 @@ http.interceptors.response.use(
             localStorage.removeItem('pulse_token');
             window.location.href = '/login';
         }
+
+        // Sub-codes du middleware account.status (maravel).
+        if (error.response?.status === 403) {
+            const subCode = [error.response.data?.errors?.sub_code ?? []].flat()[0];
+            // 002 : changement de mot de passe requis → page dédiée.
+            if (subCode === '002' && window.location.pathname !== '/change-password') {
+                window.location.href = '/change-password';
+            }
+            // 001 : compte désactivé → déconnexion.
+            if (subCode === '001') {
+                localStorage.removeItem('pulse_token');
+                window.location.href = '/login';
+            }
+        }
+
         return Promise.reject(error);
     },
 );

@@ -86,6 +86,8 @@
 
 ## 📜 Historique des Mises à Jour
 
+- **[2026-07-22]** : 🔧 **Flux de changement de mot de passe obligatoire** (fix du 403 sub_code 002 à la connexion). `ChangePasswordView.vue` (page dédiée avec déconnexion possible), action `updatePassword` dans le store auth (`PUT /users/update-password`), garde router forçant la page tant que `password_change_required` est vrai, intercepteur HTTP gérant les sub_codes maravel (002 → change-password, 001 compte désactivé → login). Casts booléens `activated`/`password_change_required` ajoutés au modèle User. 21/21 tests Pest (2 nouveaux : blocage jusqu'au changement + rejet mauvais mot de passe actuel).
+
 *(L'IA inscrira ici le journal de ses modifications au fur et à mesure)*
 
 - **[AAAA-MM-JJ]** : Création du fichier de suivi et structure initiale.

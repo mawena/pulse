@@ -9,6 +9,12 @@ const routes = [
         meta: { guest: true },
     },
     {
+        path: '/change-password',
+        name: 'change-password',
+        component: () => import('@/pages/ChangePasswordView.vue'),
+        meta: { auth: true },
+    },
+    {
         path: '/',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { auth: true },
@@ -70,6 +76,15 @@ router.beforeEach(async (to) => {
             // Token invalide : l'intercepteur HTTP gère la redirection.
             return;
         }
+    }
+
+    // Changement de mot de passe obligatoire : le backend (account.status)
+    // bloque tout sauf update-password et logout — on force la page dédiée.
+    if (auth.user?.password_change_required && to.name !== 'change-password') {
+        return { name: 'change-password' };
+    }
+    if (!auth.user?.password_change_required && to.name === 'change-password') {
+        return { name: 'dashboard' };
     }
 
     // Contrôle de permission côté client (le backend reste l'autorité).

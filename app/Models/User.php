@@ -82,6 +82,8 @@ class User extends AuthenticatableBase
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'activated' => 'boolean',
+            'password_change_required' => 'boolean',
         ];
     }
 }
