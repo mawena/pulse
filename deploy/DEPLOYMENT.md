@@ -86,6 +86,7 @@ sudo certbot --nginx -d pulse.mawena.cloud
 
 | Symptôme | Cause probable |
 |---|---|
+| `composer install` → « ext-dom / ext-xml is missing » | Plusieurs versions PHP installées : le CLI n'est pas celui attendu (vérifier les chemins `/etc/php/X.Y/cli/` dans l'erreur). Aligner le CLI sur la version FPM : `sudo update-alternatives --set php /usr/bin/php8.4`, puis `composer install --no-dev --optimize-autoloader` (jamais les dépendances dev en prod) |
 | Kill/restart → « sudo: a password is required » | `install-security.sh` non exécuté ou mauvais utilisateur PHP-FPM dans sudoers |
 | Statuts services `unknown` | Unité systemd absente — ajuster `PULSE_SERVICE_*` dans `.env` |
 | CPU % reste vide | Normal au 1er appel (calcul par delta) ; vérifie le cache Laravel sinon |
