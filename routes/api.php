@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\API\AuditLogController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\JobsController;
 use App\Http\Controllers\API\LnmpController;
 use App\Http\Controllers\API\MetricsController;
 use App\Http\Controllers\API\PermissionController;
 use App\Http\Controllers\API\ProcessController;
 use App\Http\Controllers\API\RoleController;
+use App\Http\Controllers\API\SystemServicesController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +76,19 @@ Route::controller(AuthController::class)->group(function () {
                 Route::post('/action', 'action')
                     ->middleware(['audit:service.action', 'permission:manage,system'])
                     ->name('action');
+            });
+
+            // Tous les services systemd (lecture seule)
+            Route::get('system-services', [SystemServicesController::class, 'index'])
+                ->middleware('permission:read,service')
+                ->name('system-services.index');
+
+            // File de jobs Laravel
+            Route::prefix('jobs')->name('jobs.')->controller(JobsController::class)->group(function () {
+                Route::get('/', 'index')->middleware('permission:read,system')->name('index');
+                Route::post('/{uuid}/retry', 'retry')
+                    ->middleware(['audit:job.retry', 'permission:manage,system'])
+                    ->name('retry');
             });
 
             // Audit trail (lecture seule)
