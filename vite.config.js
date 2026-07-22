@@ -22,6 +22,10 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': '/resources/js',
+            // Force une résolution unique d'apexcharts (build navigateur) :
+            // sans cet alias, les conditions d'export node/browser font
+            // embarquer la librairie deux fois (esm + ssr.esm, ~500 kB dupliqués).
+            apexcharts: 'apexcharts/dist/apexcharts.esm.js',
         },
     },
     server: {

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue';
-import VueApexCharts from 'vue3-apexcharts';
+import ApexChart from '@/components/ApexChart.vue';
 import { useMetricsStore } from '@/stores/metrics';
 import { formatBytes, formatRate, formatUptime } from '@/lib/format';
 
@@ -168,7 +168,7 @@ function usageColor(percent) {
                     <v-card>
                         <v-card-title class="text-subtitle-1">CPU %</v-card-title>
                         <v-card-text>
-                            <VueApexCharts
+                            <ApexChart
                                 type="line" height="220"
                                 :options="cpuChart.options" :series="cpuChart.series"
                             />
@@ -179,7 +179,7 @@ function usageColor(percent) {
                     <v-card>
                         <v-card-title class="text-subtitle-1">RAM %</v-card-title>
                         <v-card-text>
-                            <VueApexCharts
+                            <ApexChart
                                 type="line" height="220"
                                 :options="memoryChart.options" :series="memoryChart.series"
                             />
@@ -190,7 +190,7 @@ function usageColor(percent) {
                     <v-card>
                         <v-card-title class="text-subtitle-1">Débit réseau</v-card-title>
                         <v-card-text>
-                            <VueApexCharts
+                            <ApexChart
                                 type="area" height="220"
                                 :options="networkChart.options" :series="networkChart.series"
                             />
