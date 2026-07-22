@@ -15,13 +15,20 @@ export const useAuthStore = defineStore('auth', {
     getters: {
         isAuthenticated: (state) => Boolean(state.token),
         abilityRules: (state) => state.user?.ability_rules ?? [],
-        /** Vérifie une permission CASL (action / subject) côté client. */
+        /**
+         * Vérifie une permission CASL (action / subject) côté client.
+         * Les règles maravel ont des action/subject en TABLEAUX :
+         * [{ subject: ['all'], action: ['manage'] }] — on normalise les deux formes.
+         */
         can: (state) => (action, subject) =>
-            (state.user?.ability_rules ?? []).some(
-                (rule) =>
-                    (rule.action === action || rule.action === 'manage') &&
-                    (rule.subject === subject || rule.subject === 'all'),
-            ),
+            (state.user?.ability_rules ?? []).some((rule) => {
+                const subjects = [rule.subject ?? []].flat();
+                const actions = [rule.action ?? []].flat();
+                return (
+                    (subjects.includes('all') || subjects.includes(subject)) &&
+                    (actions.includes('manage') || actions.includes(action))
+                );
+            }),
     },
 
     actions: {
