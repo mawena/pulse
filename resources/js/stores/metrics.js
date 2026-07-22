@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import http from '@/lib/http';
 import { getEcho } from '@/lib/echo';
 
-const HISTORY_SIZE = 60; // ~3min d'historique à 3s (WS) — 5min à 5s (polling)
+const HISTORY_SIZE = 120; // ~1min d'historique à 0.5s (WS) — 10min à 5s (polling)
 export const POLL_INTERVAL_MS = 5000;
 
 /**

@@ -22,7 +22,7 @@ use Throwable;
 class StreamMetrics extends Command
 {
     protected $signature = 'pulse:stream
-        {--interval=3 : Intervalle en secondes entre deux échantillons}
+        {--interval=0.5 : Intervalle en secondes entre deux échantillons (min 0.2)}
         {--once : Un seul échantillon puis sortie (tests / cron)}';
 
     protected $description = 'Diffuse les métriques système en continu via WebSocket (Reverb)';
@@ -32,7 +32,10 @@ class StreamMetrics extends Command
         LnmpControlService $lnmp,
         SystemServicesService $services,
     ): int {
-        $interval = max(1, (int) $this->option('interval'));
+        $interval = max(0.2, (float) $this->option('interval'));
+        // Les services (systemctl) sont sondés toutes les ~15s quel que soit
+        // l'intervalle des métriques — inutile de marteler systemd.
+        $servicesEvery = max(1, (int) round(15 / $interval));
         $tick = 0;
 
         $this->info("Streaming des métriques toutes les {$interval}s (Ctrl+C pour arrêter)…");
@@ -41,7 +44,7 @@ class StreamMetrics extends Command
             try {
                 MetricsUpdated::dispatch($metrics->snapshot());
 
-                if ($tick % 5 === 0) {
+                if ($tick % $servicesEvery === 0) {
                     ServicesUpdated::dispatch($lnmp->status(), $services->list());
                 }
             } catch (Throwable $e) {
@@ -53,7 +56,7 @@ class StreamMetrics extends Command
             $tick++;
 
             if (! $this->option('once')) {
-                sleep($interval);
+                usleep((int) ($interval * 1_000_000));
             }
         } while (! $this->option('once'));
 

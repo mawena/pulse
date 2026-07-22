@@ -57,8 +57,22 @@ class SystemMetricsService
             'load_1' => round($load[0], 2),
             'load_5' => round($load[1], 2),
             'load_15' => round($load[2], 2),
-            'cores' => (int) (Process::run(['nproc'])->output() ?: 1),
+            'cores' => $this->cores(),
         ];
+    }
+
+    /**
+     * Nombre de cœurs — invariable, compté une seule fois par processus
+     * (le streaming à 0.5s ne doit pas lancer `nproc` à chaque tick).
+     */
+    private function cores(): int
+    {
+        static $cores = null;
+
+        return $cores ??= max(1, substr_count(
+            (string) @file_get_contents('/proc/cpuinfo'),
+            "\nprocessor"
+        ) + 1);
     }
 
     /**
@@ -93,8 +107,15 @@ class SystemMetricsService
 
     /**
      * Partitions disque via `df` (arguments fixes, aucune entrée utilisateur).
+     * L'occupation disque évolue lentement : résultat mémoïsé 10s pour ne pas
+     * lancer un processus `df` à chaque tick du streaming.
      */
     public function disks(): array
+    {
+        return Cache::remember('pulse.disks', 10, fn () => $this->probeDisks());
+    }
+
+    private function probeDisks(): array
     {
         $result = Process::run([
             'df', '-B1', '--output=target,fstype,size,used,avail,pcent',
