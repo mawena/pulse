@@ -74,23 +74,43 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now pulse-reverb pulse-stream
 ```
 
-Dans `.env` de production (le vhost nginx proxifie `/app/` vers Reverb) :
+**Deux connexions distinctes** — ne pas confondre :
+
+1. le **backend** (`pulse:stream`) publie les événements à Reverb **en local**
+   (`127.0.0.1:8080`) → variables `REVERB_*` ;
+2. le **navigateur** se connecte en `wss://` à l'**URL publique**, que nginx
+   proxifie (`location /app/`) vers Reverb → variables `VITE_REVERB_*`,
+   à définir **explicitement** (pas d'interpolation `${REVERB_HOST}`).
+
+Dans `.env` de production :
 
 ```
-REVERB_HOST=pulse.mawena.cloud
-REVERB_PORT=443
-REVERB_SCHEME=https
-VITE_REVERB_HOST="${REVERB_HOST}"
-VITE_REVERB_PORT="${REVERB_PORT}"
-VITE_REVERB_SCHEME="${REVERB_SCHEME}"
+# Backend → Reverb local (publication des événements)
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
 # La liste des services systemd dépasse la limite par défaut de 10 Ko
 REVERB_MAX_REQUEST_SIZE=262144
 REVERB_APP_MAX_MESSAGE_SIZE=262144
+
+# Navigateur → URL publique via nginx (incrustées au build !)
+VITE_REVERB_HOST=pulse.mawena.cloud
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
 ```
 
-> Rebuilder le frontend après modification des variables `VITE_*`
-> (`npm run build`). Si le WebSocket est indisponible, le frontend bascule
-> automatiquement en polling HTTP (badge « POLL » orange dans la topbar).
+Puis appliquer :
+
+```bash
+php artisan config:cache
+npm run build          # les VITE_* sont figées dans le bundle au build
+sudo systemctl restart pulse-reverb pulse-stream
+```
+
+> ⚠️ Les variables `VITE_*` sont lues **au moment du build**, pas à
+> l'exécution : toute modification impose un `npm run build`. Si le
+> WebSocket est indisponible, le frontend bascule automatiquement en
+> polling HTTP (badge « POLL » orange dans la topbar au lieu de « LIVE »).
 
 ## 5. Nginx + TLS
 
