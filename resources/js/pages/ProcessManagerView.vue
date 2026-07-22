@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import http from '@/lib/http';
 import { formatBytes } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
+import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
 const canKill = auth.can('manage', 'system');
@@ -78,17 +79,19 @@ onUnmounted(() => clearInterval(timer));
 
 <template>
     <div>
-        <div class="d-flex align-center mb-4 flex-wrap ga-2">
-            <h1 class="text-h5">Processus</h1>
-            <v-spacer />
+        <PageHeader
+            title="Processus"
+            :subtitle="`${processes.length} processus actifs, triés par CPU`"
+            icon="mdi-memory"
+        >
             <v-switch
-                v-model="autoRefresh" label="Auto-refresh (10s)"
-                density="compact" hide-details color="primary" class="mr-4"
+                v-model="autoRefresh" label="Auto (10s)"
+                density="compact" hide-details color="primary"
             />
             <v-btn prepend-icon="mdi-refresh" variant="tonal" :loading="loading" @click="fetchProcesses">
                 Rafraîchir
             </v-btn>
-        </div>
+        </PageHeader>
 
         <v-card>
             <v-card-text>
@@ -105,6 +108,7 @@ onUnmounted(() => clearInterval(timer));
                     :loading="loading"
                     :items-per-page="25"
                     density="compact"
+                    mobile-breakpoint="sm"
                     hover
                 >
                     <template #item.cpu_percent="{ value }">
@@ -118,8 +122,11 @@ onUnmounted(() => clearInterval(timer));
                     <template #item.rss="{ value }">
                         {{ formatBytes(value) }}
                     </template>
+                    <template #item.pid="{ value }">
+                        <span class="font-data">{{ value }}</span>
+                    </template>
                     <template #item.command="{ value }">
-                        <span class="text-caption font-monospace">{{ value.slice(0, 120) }}</span>
+                        <span class="text-caption font-data">{{ value.slice(0, 120) }}</span>
                     </template>
                     <template v-if="canKill" #item.actions="{ item }">
                         <v-btn

@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import http from '@/lib/http';
 import { useAuthStore } from '@/stores/auth';
+import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
 const canManage = auth.can('manage', 'system');
@@ -61,13 +62,15 @@ onUnmounted(() => clearInterval(timer));
 
 <template>
     <div>
-        <div class="d-flex align-center mb-4">
-            <h1 class="text-h5">Services LNMP</h1>
-            <v-spacer />
+        <PageHeader
+            title="Services LNMP"
+            subtitle="nginx, MySQL et PHP-FPM de la stack mawena/lnmp"
+            icon="mdi-server-network"
+        >
             <v-btn prepend-icon="mdi-refresh" variant="tonal" :loading="loading" @click="fetchStatus">
                 Rafraîchir
             </v-btn>
-        </div>
+        </PageHeader>
 
         <v-row dense>
             <v-col v-for="service in services" :key="service.key" cols="12" md="4">

@@ -1,10 +1,15 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import PulseLogo from '@/components/PulseLogo.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
+
+// La page sert aussi bien au changement forcé (1ère connexion)
+// qu'au changement volontaire depuis le menu utilisateur.
+const isForced = computed(() => Boolean(auth.user?.password_change_required));
 
 const currentPassword = ref('');
 const newPassword = ref('');
@@ -46,14 +51,18 @@ async function handleLogout() {
     <v-container class="fill-height" fluid>
         <v-row align="center" justify="center">
             <v-col cols="12" sm="8" md="4">
+                <div class="d-flex flex-column align-center mb-6">
+                    <PulseLogo :size="48" />
+                </div>
                 <v-card class="pa-4">
-                    <v-card-title class="text-center">
-                        <v-icon icon="mdi-lock-reset" color="warning" size="40" class="mb-2 d-block mx-auto" />
-                        Changement de mot de passe requis
+                    <v-card-title class="text-center pulse-display">
+                        <v-icon icon="mdi-lock-reset" :color="isForced ? 'warning' : 'primary'" size="36" class="mb-2 d-block mx-auto" />
+                        {{ isForced ? 'Nouveau mot de passe requis' : 'Changer le mot de passe' }}
                     </v-card-title>
                     <v-card-subtitle class="text-center mb-4 text-wrap">
-                        Pour des raisons de sécurité, vous devez définir un nouveau
-                        mot de passe avant d'accéder à MawenaPulse.
+                        {{ isForced
+                            ? 'Définissez votre propre mot de passe pour accéder au monitoring.'
+                            : 'Choisissez un nouveau mot de passe pour votre compte.' }}
                     </v-card-subtitle>
                     <v-card-text>
                         <v-form @submit.prevent="handleSubmit">
@@ -96,8 +105,11 @@ async function handleLogout() {
                             >
                                 Changer le mot de passe
                             </v-btn>
-                            <v-btn variant="text" block class="mt-2" @click="handleLogout">
+                            <v-btn v-if="isForced" variant="text" block class="mt-2" @click="handleLogout">
                                 Se déconnecter
+                            </v-btn>
+                            <v-btn v-else variant="text" block class="mt-2" :to="{ name: 'dashboard' }">
+                                Retour au dashboard
                             </v-btn>
                         </v-form>
                     </v-card-text>

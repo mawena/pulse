@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 import http from '@/lib/http';
 import { formatDateTime } from '@/lib/format';
+import PageHeader from '@/components/PageHeader.vue';
 
 const logs = ref([]);
 const total = ref(0);
@@ -57,13 +58,15 @@ onMounted(fetchLogs);
 
 <template>
     <div>
-        <div class="d-flex align-center mb-4">
-            <h1 class="text-h5">Audit Trail</h1>
-            <v-spacer />
+        <PageHeader
+            title="Audit Trail"
+            subtitle="Journal en lecture seule des actions système"
+            icon="mdi-clipboard-text-clock-outline"
+        >
             <v-btn prepend-icon="mdi-refresh" variant="tonal" :loading="loading" @click="fetchLogs">
                 Rafraîchir
             </v-btn>
-        </div>
+        </PageHeader>
 
         <v-card>
             <v-card-text>
@@ -98,10 +101,11 @@ onMounted(fetchLogs);
                     :items-length="total"
                     :loading="loading"
                     density="compact"
+                    mobile-breakpoint="sm"
                     hover
                 >
                     <template #item.created_at="{ item }">
-                        {{ item.created_at_fr ?? formatDateTime(item.created_at) }}
+                        <span class="font-data text-caption">{{ item.created_at_fr ?? formatDateTime(item.created_at) }}</span>
                     </template>
                     <template #item.user="{ item }">
                         {{ item.user?.name ?? 'Système' }}
@@ -111,6 +115,9 @@ onMounted(fetchLogs);
                     </template>
                     <template #item.status="{ value }">
                         <v-chip size="x-small" :color="statusColors[value]">{{ value }}</v-chip>
+                    </template>
+                    <template #item.ip_address="{ value }">
+                        <span class="font-data text-caption">{{ value ?? '—' }}</span>
                     </template>
                 </v-data-table-server>
             </v-card-text>

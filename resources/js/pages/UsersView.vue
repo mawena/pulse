@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue';
 import http from '@/lib/http';
 import { useAuthStore } from '@/stores/auth';
 import { formatDateTime } from '@/lib/format';
+import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
 
@@ -142,13 +143,15 @@ onMounted(() => {
 
 <template>
     <div>
-        <div class="d-flex align-center mb-4">
-            <h1 class="text-h5">Utilisateurs & Rôles</h1>
-            <v-spacer />
+        <PageHeader
+            title="Utilisateurs & Rôles"
+            :subtitle="`${total} compte${total > 1 ? 's' : ''} — accès contrôlé par rôles`"
+            icon="mdi-account-group-outline"
+        >
             <v-btn color="primary" prepend-icon="mdi-account-plus" @click="openCreate">
                 Nouvel utilisateur
             </v-btn>
-        </div>
+        </PageHeader>
 
         <v-card>
             <v-card-text>
@@ -166,6 +169,7 @@ onMounted(() => {
                     :items-length="total"
                     :loading="loading"
                     density="comfortable"
+                    mobile-breakpoint="sm"
                     hover
                 >
                     <template #item.roles="{ item }">

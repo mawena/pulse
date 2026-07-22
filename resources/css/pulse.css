@@ -1,0 +1,164 @@
+/*
+ * MawenaPulse — système de design « moniteur de signes vitaux »
+ * Fond bleu-nuit à deux niveaux de panneaux bordés (look console),
+ * accent teal ECG, données en monospace tabulaire.
+ */
+
+:root {
+    --pulse-abyss: #0b1020;
+    --pulse-panel: #121a2f;
+    --pulse-panel-raised: #182238;
+    --pulse-border: #232f4b;
+    --pulse-accent: #35e0c2;
+    --pulse-ink: #e7ecf6;
+    --pulse-ink-dim: #8d97b2;
+
+    --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
+    --font-body: 'Inter Variable', system-ui, -apple-system, sans-serif;
+    --font-data: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', monospace;
+}
+
+html {
+    background: var(--pulse-abyss);
+    scrollbar-color: var(--pulse-border) transparent;
+}
+
+body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Typographie ------------------------------------------------------- */
+
+.v-application {
+    font-family: var(--font-body) !important;
+}
+
+.v-application h1,
+.v-application h2,
+.v-application .text-h4,
+.v-application .text-h5,
+.v-application .text-h6,
+.v-application .v-card-title,
+.pulse-display {
+    font-family: var(--font-display) !important;
+    letter-spacing: -0.01em !important;
+}
+
+/* Valeurs, PIDs, IPs, timestamps : monospace à chiffres tabulaires */
+.font-data,
+.v-application code {
+    font-family: var(--font-data) !important;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.v-application code {
+    background: var(--pulse-panel-raised);
+    border: 1px solid var(--pulse-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.8em;
+}
+
+/* ---- Panneaux : bordures nettes plutôt qu'ombres ------------------------ */
+
+.v-card {
+    border: 1px solid var(--pulse-border) !important;
+    background-clip: padding-box;
+}
+
+.v-navigation-drawer,
+.v-app-bar,
+.v-bottom-navigation {
+    border-color: var(--pulse-border) !important;
+}
+
+/* ---- Métrique : tuile de valeur vitale ---------------------------------- */
+
+.metric-value {
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.metric-unit {
+    font-size: 0.55em;
+    font-weight: 500;
+    color: var(--pulse-ink-dim);
+    margin-left: 2px;
+}
+
+/* ---- Signature : battement LIVE ----------------------------------------- */
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pulse-accent);
+    box-shadow: 0 0 0 0 rgba(53, 224, 194, 0.5);
+    animation: pulse-beat 2.4s ease-out infinite;
+}
+
+@keyframes pulse-beat {
+    0% { box-shadow: 0 0 0 0 rgba(53, 224, 194, 0.55); }
+    45% { box-shadow: 0 0 0 7px rgba(53, 224, 194, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(53, 224, 194, 0); }
+}
+
+/* Tracé ECG du logo : dessin en boucle */
+.ecg-path {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: ecg-draw 3.2s linear infinite;
+}
+
+@keyframes ecg-draw {
+    0% { stroke-dashoffset: 120; opacity: 0.9; }
+    55% { stroke-dashoffset: 0; opacity: 1; }
+    75% { opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-dot,
+    .ecg-path {
+        animation: none !important;
+        stroke-dashoffset: 0;
+    }
+}
+
+/* ---- Ergonomie ---------------------------------------------------------- */
+
+/* Focus clavier toujours visible — sauf dans les champs Vuetify,
+   qui affichent déjà leur propre contour de focus. */
+:focus-visible {
+    outline: 2px solid var(--pulse-accent) !important;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.v-field :focus-visible,
+.v-field__input:focus-visible {
+    outline: none !important;
+}
+
+/* Scrollbars discrètes */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+    background: var(--pulse-border);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Lignes de tableau plus respirantes au doigt */
+.v-data-table td { min-height: 44px; }
+
+/* Le contenu ne colle jamais à la bottom-nav mobile */
+@media (max-width: 959px) {
+    .pulse-main-content { padding-bottom: 76px !important; }
+}

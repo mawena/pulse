@@ -80,11 +80,9 @@ router.beforeEach(async (to) => {
 
     // Changement de mot de passe obligatoire : le backend (account.status)
     // bloque tout sauf update-password et logout — on force la page dédiée.
+    // (La page reste accessible volontairement via le menu utilisateur.)
     if (auth.user?.password_change_required && to.name !== 'change-password') {
         return { name: 'change-password' };
-    }
-    if (!auth.user?.password_change_required && to.name === 'change-password') {
-        return { name: 'dashboard' };
     }
 
     // Contrôle de permission côté client (le backend reste l'autorité).

@@ -1,58 +1,112 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="public/favicon.svg" width="72" alt="MawenaPulse">
 </p>
 
-## About Laravel
+<h1 align="center">MawenaPulse</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center"><em>Les signes vitaux de votre serveur, en direct.</em></p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white" alt="Laravel">
+  <img src="https://img.shields.io/badge/Vue-3-42B883?logo=vuedotjs&logoColor=white" alt="Vue 3">
+  <img src="https://img.shields.io/badge/Vuetify-3-1867C0?logo=vuetify&logoColor=white" alt="Vuetify 3">
+  <img src="https://img.shields.io/badge/Tests-Pest-8BC34A" alt="Pest">
+</p>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+**MawenaPulse** est un cockpit de monitoring pour VPS Ubuntu/Debian équipé de la
+stack LNMP [mawena/lnmp](https://github.com/mawena/lnmp). Il affiche les
+métriques système en temps réel, gère les processus et pilote les services —
+avec des rôles, des permissions et un audit trail complet.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Déployé sur **[pulse.mawena.cloud](https://pulse.mawena.cloud)**.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Fonctionnalités
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- 📊 **Dashboard temps réel** — CPU (%, load 1/5/15), RAM & swap, disques,
+  débit réseau IN/OUT, uptime/OS/kernel. Polling 5 s, graphiques ApexCharts.
+- ⚙️ **Gestionnaire de processus** — liste `ps` triée par CPU, recherche et tri,
+  kill SIGTERM/SIGKILL avec confirmation (admins uniquement).
+- 🔁 **Services LNMP** — statut systemd de nginx / MySQL / PHP-FPM,
+  restart & reload sécurisés depuis l'interface.
+- 👥 **Rôles & permissions** — RBAC dynamique en base
+  ([mawena/maravel](https://github.com/mawena/maravel)) : super-admin,
+  observateur lecture seule, permissions CASL exposées au frontend.
+- 📜 **Audit trail** — journal append-only de toutes les actions système
+  (y compris les tentatives refusées), avec utilisateur, IP et détails.
+- 🔐 **Sécurité en profondeur** — validation stricte des entrées (3 couches),
+  commandes sans shell, sudoers limité à deux wrappers dédiés,
+  changement de mot de passe forcé à la première connexion.
 
-## Agentic Development
+## Stack
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Couche | Technologies |
+|---|---|
+| Backend | Laravel 13 · Sanctum · [mawena/maravel](https://github.com/mawena/maravel) (RBAC + APIController) |
+| Frontend | Vue 3 · Vuetify 3 (thème sombre) · Pinia · vue-router · ApexCharts |
+| Système | `/proc`, `ps`, `df`, `systemctl` via wrappers sudo validés |
+| Tests | Pest |
+
+## Démarrage rapide (développement)
 
 ```bash
-composer require laravel/boost --dev
+git clone <repo> pulse && cd pulse
 
-php artisan boost:install
+# Backend
+composer install
+cp .env.example .env          # configurer DB_* (MySQL)
+php artisan key:generate
+php artisan migrate --seed    # rôles + compte admin@mawena.cloud / password
+
+# Frontend
+npm install
+composer dev                  # serveur + queue + logs + vite
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Connectez-vous avec `admin@mawena.cloud` / `password` — un nouveau mot de passe
+vous sera demandé immédiatement.
 
-## Contributing
+## Tests
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan test
+```
 
-## Code of Conduct
+## Déploiement en production
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+La procédure complète (base de données, `.env`, wrappers sudo, vhost nginx,
+TLS, checklist de validation) est documentée dans
+[`deploy/DEPLOYMENT.md`](deploy/DEPLOYMENT.md).
 
-## Security Vulnerabilities
+En résumé :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force && php artisan db:seed --force
+npm ci && npm run build
+sudo bash deploy/install-security.sh   # wrappers pulse-kill / pulse-service + sudoers
+```
 
-## License
+> ⚠️ En production, activez `PULSE_USE_SUDO=true` et adaptez
+> `PULSE_SERVICE_PHP_FPM` à la version PHP installée.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Structure du projet
+
+```
+app/
+├── Http/Controllers/API/   # Auth, Users, Roles, Metrics, Process, Lnmp, AuditLog
+├── Http/Middleware/        # EnsurePermission (RBAC), AuditTrail
+├── Services/               # SystemMetrics, ProcessManager, LnmpControl
+resources/js/
+├── pages/                  # Dashboard, Processus, Services, Users, Audit, Auth
+├── stores/                 # auth (CASL), metrics (polling + historique)
+├── components/             # ApexChart, PulseLogo, PageHeader
+deploy/                     # sudoers, wrappers, vhost nginx, DEPLOYMENT.md
+ai/                         # spécifications et suivi du projet
+```
+
+## Suivi du projet
+
+L'avancement détaillé phase par phase est tenu à jour dans
+[`ai/tracker.md`](ai/tracker.md).

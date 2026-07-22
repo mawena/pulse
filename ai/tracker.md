@@ -86,6 +86,8 @@
 
 ## 📜 Historique des Mises à Jour
 
+- **[2026-07-22]** : 🎨 **Refonte design « moniteur de signes vitaux »** — identité visuelle ECG (fond bleu-nuit #0B1020, panneaux bordés sans ombres, accent teal #35E0C2, statuts sémantiques distincts), typographie Space Grotesk (titres) / Inter (UI) / JetBrains Mono (données, chiffres tabulaires) auto-hébergée. Signature : logo ECG animé (`PulseLogo.vue`, tracé en boucle, `prefers-reduced-motion` respecté) + indicateur LIVE battant dans la topbar. Ergonomie : sidebar rail repliable (desktop), **bottom navigation mobile**, menu utilisateur (avatar, rôle, changement de mdp volontaire — garde router ajustée), tables empilées sur mobile (`mobile-breakpoint`), `PageHeader.vue` unifié, focus clavier visible, skeletons de chargement. Dashboard : tuiles vitales redessinées + graphes area teal/bleu/vert-ambre. Favicon SVG + ICO multi-tailles générés, `app.blade.php` enrichi (theme-color, description), **README.md du projet réécrit**. Vérifié par captures d'écran headless (login desktop/mobile, fix double contour de focus). 21/21 tests.
+
 - **[2026-07-22]** : 🔧 **Flux de changement de mot de passe obligatoire** (fix du 403 sub_code 002 à la connexion). `ChangePasswordView.vue` (page dédiée avec déconnexion possible), action `updatePassword` dans le store auth (`PUT /users/update-password`), garde router forçant la page tant que `password_change_required` est vrai, intercepteur HTTP gérant les sub_codes maravel (002 → change-password, 001 compte désactivé → login). Casts booléens `activated`/`password_change_required` ajoutés au modèle User. 21/21 tests Pest (2 nouveaux : blocage jusqu'au changement + rejet mauvais mot de passe actuel).
 
 *(L'IA inscrira ici le journal de ses modifications au fur et à mesure)*
