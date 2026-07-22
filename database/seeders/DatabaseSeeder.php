@@ -15,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Rôles & permissions RBAC (admin, observer, permissions système).
+        $this->call(RolePermissionSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Compte administrateur par défaut (mot de passe à changer à la 1ère connexion).
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@mawena.cloud'],
+            [
+                'name' => 'Admin',
+                'password' => 'password',
+                'activated' => true,
+                'password_change_required' => true,
+            ]
+        );
+        $admin->assignRole('admin');
     }
 }

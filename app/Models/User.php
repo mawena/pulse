@@ -2,20 +2,75 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Maravel\Models\AuthenticatableBase;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends AuthenticatableBase
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'activated',
+        'password_change_required',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Les accesseurs ajoutés à la sérialisation.
+     *
+     * `ability_rules` (format CASL) est calculé dynamiquement depuis les rôles
+     * assignés à l'utilisateur (trait HasRoles), pour être consommé par CASL
+     * côté frontend.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'ability_rules',
+    ];
+
+    /**
+     * Casts d'énumération (libellés lisibles)
+     *
+     * @var array
+     */
+    protected $enumCasts = [
+        [
+            'colum_name' => 'activated',
+            'additional_column_name' => 'activated_fr',
+            'choices' => [
+                1 => 'Oui',
+                0 => 'Non',
+            ],
+        ],
+        [
+            'colum_name' => 'password_change_required',
+            'additional_column_name' => 'password_change_required_fr',
+            'choices' => [
+                1 => 'Obligatoire',
+                0 => 'Facultatif',
+            ],
+        ],
+    ];
 
     /**
      * Get the attributes that should be cast.
