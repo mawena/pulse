@@ -1,0 +1,20 @@
+# MawenaPulse — boucle d'échantillonnage des métriques (diffusées via Reverb)
+# Installer : sudo cp deploy/systemd/pulse-stream.service /etc/systemd/system/
+#             sudo systemctl daemon-reload && sudo systemctl enable --now pulse-stream
+
+[Unit]
+Description=MawenaPulse metrics streaming loop
+After=network.target pulse-reverb.service
+Wants=pulse-reverb.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/pulse
+ExecStart=/usr/bin/php artisan pulse:stream --interval=3
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

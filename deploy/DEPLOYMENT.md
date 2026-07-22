@@ -62,6 +62,36 @@ les wrappers rejettent signaux/PID/actions/unités hors whitelist.
 Si le pool PHP-FPM tourne sous un autre utilisateur que `www-data`, adapter
 `deploy/sudoers.d/mawenapulse` avant l'installation.
 
+## 4 bis. Temps réel WebSocket (Reverb)
+
+Le dashboard reçoit les métriques en temps réel via WebSocket. Deux services
+systemd sont fournis : le serveur Reverb et la boucle d'échantillonnage.
+
+```bash
+sudo cp deploy/systemd/pulse-reverb.service /etc/systemd/system/
+sudo cp deploy/systemd/pulse-stream.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now pulse-reverb pulse-stream
+```
+
+Dans `.env` de production (le vhost nginx proxifie `/app/` vers Reverb) :
+
+```
+REVERB_HOST=pulse.mawena.cloud
+REVERB_PORT=443
+REVERB_SCHEME=https
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
+# La liste des services systemd dépasse la limite par défaut de 10 Ko
+REVERB_MAX_REQUEST_SIZE=262144
+REVERB_APP_MAX_MESSAGE_SIZE=262144
+```
+
+> Rebuilder le frontend après modification des variables `VITE_*`
+> (`npm run build`). Si le WebSocket est indisponible, le frontend bascule
+> automatiquement en polling HTTP (badge « POLL » orange dans la topbar).
+
 ## 5. Nginx + TLS
 
 ```bash
@@ -75,7 +105,8 @@ sudo certbot --nginx -d pulse.mawena.cloud
 
 - [ ] `https://pulse.mawena.cloud` affiche la page de login (thème sombre)
 - [ ] Connexion `admin@mawena.cloud` → changement de mot de passe forcé
-- [ ] Dashboard : CPU %, load, RAM, swap, disques, débit réseau se rafraîchissent (~5 s)
+- [ ] Dashboard : badge « LIVE » vert (WebSocket) et métriques rafraîchies toutes les ~3 s
+- [ ] `systemctl status pulse-reverb pulse-stream` : les deux services tournent
 - [ ] Processus : liste visible, kill d'un processus de test fonctionne (`sleep 300 &`)
 - [ ] Services LNMP : statuts corrects ; `reload` nginx fonctionne depuis l'UI
 - [ ] Audit Trail : les actions kill/restart apparaissent avec utilisateur + IP

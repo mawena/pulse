@@ -25,7 +25,12 @@ Déployé sur **[pulse.mawena.cloud](https://pulse.mawena.cloud)**.
 ## Fonctionnalités
 
 - 📊 **Dashboard temps réel** — CPU (%, load 1/5/15), RAM & swap, disques,
-  débit réseau IN/OUT, uptime/OS/kernel. Polling 5 s, graphiques ApexCharts.
+  débit réseau IN/OUT, uptime/OS/kernel. **WebSocket (Laravel Reverb)** avec
+  échantillonnage backend toutes les 3 s et fallback automatique en polling
+  HTTP. Graphiques ApexCharts.
+- 🧩 **Services système & Jobs** — toutes les unités systemd avec leur état
+  (poussées en temps réel), file de jobs Laravel (en attente / en cours /
+  échoués) avec relance des échecs.
 - ⚙️ **Gestionnaire de processus** — liste `ps` triée par CPU, recherche et tri,
   kill SIGTERM/SIGKILL avec confirmation (admins uniquement).
 - 🔁 **Services LNMP** — statut systemd de nginx / MySQL / PHP-FPM,
