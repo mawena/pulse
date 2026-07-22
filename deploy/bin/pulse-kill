@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# MawenaPulse — wrapper sudo pour kill.
+# Installé dans /usr/local/bin/pulse-kill (root:root, 755).
+# Seul ce script est autorisé via /etc/sudoers.d/mawenapulse : la validation
+# des arguments se fait ici, jamais dans la règle sudoers (les wildcards
+# sudoers sont vulnérables à l'injection d'arguments).
+#
+# Usage : pulse-kill <TERM|KILL> <PID>
+
+set -euo pipefail
+
+signal="${1:-}"
+pid="${2:-}"
+
+case "$signal" in
+    TERM|KILL) ;;
+    *) echo "pulse-kill: signal refusé: ${signal}" >&2; exit 1 ;;
+esac
+
+if ! [[ "$pid" =~ ^[0-9]+$ ]]; then
+    echo "pulse-kill: PID invalide: ${pid}" >&2
+    exit 1
+fi
+
+if (( pid < 2 )); then
+    echo "pulse-kill: PID protégé (kernel/init): ${pid}" >&2
+    exit 1
+fi
+
+exec /bin/kill -s "$signal" -- "$pid"

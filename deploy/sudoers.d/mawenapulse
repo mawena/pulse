@@ -1,0 +1,12 @@
+# MawenaPulse — droits sudo restreints pour l'utilisateur du pool PHP-FPM.
+# Installer dans /etc/sudoers.d/mawenapulse (0440, root:root) puis valider :
+#   visudo -c -f /etc/sudoers.d/mawenapulse
+#
+# Principe : AUCUNE commande générique (kill, systemctl…) n'est autorisée
+# directement. Seuls les wrappers dédiés, qui valident strictement leurs
+# arguments, sont accessibles — sans mot de passe et sans TTY.
+
+Defaults:www-data !requiretty
+
+www-data ALL=(root) NOPASSWD: /usr/local/bin/pulse-kill
+www-data ALL=(root) NOPASSWD: /usr/local/bin/pulse-service

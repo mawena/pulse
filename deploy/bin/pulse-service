@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# MawenaPulse — wrapper sudo pour la gestion des services LNMP.
+# Installé dans /usr/local/bin/pulse-service (root:root, 755).
+# Seules les unités de la stack mawena/lnmp et les actions restart/reload
+# sont autorisées — toute autre combinaison est rejetée.
+#
+# Usage : pulse-service <restart|reload> <unit>
+
+set -euo pipefail
+
+action="${1:-}"
+unit="${2:-}"
+
+case "$action" in
+    restart|reload) ;;
+    *) echo "pulse-service: action refusée: ${action}" >&2; exit 1 ;;
+esac
+
+if [[ "$unit" != "nginx" && "$unit" != "mysql" && "$unit" != "mariadb" ]] \
+    && ! [[ "$unit" =~ ^php[0-9]+\.[0-9]+-fpm$ ]]; then
+    echo "pulse-service: unité refusée: ${unit}" >&2
+    exit 1
+fi
+
+exec /usr/bin/systemctl "$action" "$unit"
