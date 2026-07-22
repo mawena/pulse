@@ -11,7 +11,7 @@ Wants=pulse-reverb.service
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/pulse
+WorkingDirectory=/var/www/html/Mawena/pulse
 ExecStart=/usr/bin/php artisan pulse:stream --interval=3
 Restart=always
 RestartSec=5
