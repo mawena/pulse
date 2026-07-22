@@ -14,15 +14,39 @@ const { mdAndUp } = useDisplay();
 // Desktop : sidebar compactable en rail. Mobile : bottom navigation.
 const rail = ref(false);
 
-const navItems = computed(() =>
+// Navigation groupée, filtrée par permissions CASL.
+const navSections = computed(() =>
     [
-        { title: 'Dashboard', short: 'Dash', icon: 'mdi-view-dashboard-outline', to: { name: 'dashboard' }, permission: ['read', 'system'] },
-        { title: 'Processus', short: 'Process', icon: 'mdi-memory', to: { name: 'processes' }, permission: ['read', 'process'] },
-        { title: 'Services LNMP', short: 'Services', icon: 'mdi-server-network', to: { name: 'services' }, permission: ['read', 'service'] },
-        { title: 'Utilisateurs', short: 'Users', icon: 'mdi-account-group-outline', to: { name: 'users' }, permission: ['read', 'user'] },
-        { title: 'Audit Trail', short: 'Audit', icon: 'mdi-clipboard-text-clock-outline', to: { name: 'audit-logs' }, permission: ['read', 'audit-log'] },
-    ].filter((item) => auth.can(...item.permission)),
+        {
+            title: 'Monitoring',
+            items: [
+                { title: 'Dashboard', short: 'Dash', icon: 'mdi-view-dashboard-outline', to: { name: 'dashboard' }, permission: ['read', 'system'] },
+                { title: 'Processus', short: 'Process', icon: 'mdi-memory', to: { name: 'processes' }, permission: ['read', 'process'] },
+                { title: 'Services LNMP', short: 'LNMP', icon: 'mdi-server-network', to: { name: 'services' }, permission: ['read', 'service'] },
+                { title: 'Services système', short: 'Services', icon: 'mdi-cog-outline', to: { name: 'system-services' }, permission: ['read', 'service'] },
+                { title: 'Jobs', short: 'Jobs', icon: 'mdi-tray-full', to: { name: 'jobs' }, permission: ['read', 'system'] },
+            ],
+        },
+        {
+            title: 'Administration',
+            items: [
+                { title: 'Utilisateurs', short: 'Users', icon: 'mdi-account-group-outline', to: { name: 'users' }, permission: ['read', 'user'] },
+                { title: 'Rôles & permissions', short: 'Rôles', icon: 'mdi-shield-account-outline', to: { name: 'roles' }, permission: ['manage', 'role'] },
+                { title: 'Audit Trail', short: 'Audit', icon: 'mdi-clipboard-text-clock-outline', to: { name: 'audit-logs' }, permission: ['read', 'audit-log'] },
+            ],
+        },
+    ]
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => auth.can(...item.permission)),
+        }))
+        .filter((section) => section.items.length),
 );
+
+const navItems = computed(() => navSections.value.flatMap((section) => section.items));
+// Mobile : 4 entrées + « Plus » si nécessaire (bottom nav lisible).
+const bottomNavItems = computed(() => navItems.value.slice(0, 4));
+const overflowNavItems = computed(() => navItems.value.slice(4));
 
 const initials = computed(() =>
     (auth.user?.name ?? '?')
@@ -58,15 +82,20 @@ async function handleLogout() {
         </div>
         <v-divider />
         <v-list density="comfortable" nav>
-            <v-list-item
-                v-for="item in navItems"
-                :key="item.title"
-                :prepend-icon="item.icon"
-                :title="item.title"
-                :to="item.to"
-                rounded="lg"
-                color="primary"
-            />
+            <template v-for="section in navSections" :key="section.title">
+                <v-list-subheader v-if="!rail" class="text-caption text-medium-emphasis">
+                    {{ section.title }}
+                </v-list-subheader>
+                <v-list-item
+                    v-for="item in section.items"
+                    :key="item.title"
+                    :prepend-icon="item.icon"
+                    :title="item.title"
+                    :to="item.to"
+                    rounded="lg"
+                    color="primary"
+                />
+            </template>
         </v-list>
         <template #append>
             <v-divider />
@@ -88,14 +117,18 @@ async function handleLogout() {
 
         <v-spacer />
 
-        <!-- Indicateur LIVE : battement au rythme du polling -->
+        <!-- Indicateur LIVE : WebSocket temps réel (ou fallback polling) -->
         <div
             v-if="lastUpdate"
             class="d-none d-sm-flex align-center ga-2 mr-3"
-            :title="`Dernière mesure à ${lastUpdate}`"
+            :title="metrics.transport === 'ws'
+                ? `Temps réel WebSocket — dernière mesure à ${lastUpdate}`
+                : `Mode dégradé (polling HTTP) — dernière mesure à ${lastUpdate}`"
         >
-            <span class="live-dot" />
-            <span class="text-caption text-medium-emphasis font-data">{{ lastUpdate }}</span>
+            <span class="live-dot" :style="metrics.transport === 'polling' ? 'background:#FFB454' : ''" />
+            <span class="text-caption text-medium-emphasis font-data">
+                {{ metrics.transport === 'ws' ? 'LIVE' : 'POLL' }} · {{ lastUpdate }}
+            </span>
         </div>
 
         <!-- Menu utilisateur -->
@@ -143,7 +176,7 @@ async function handleLogout() {
         </v-container>
     </v-main>
 
-    <!-- Navigation mobile : accessible au pouce -->
+    <!-- Navigation mobile : 4 entrées + « Plus », accessible au pouce -->
     <v-bottom-navigation
         v-if="!mdAndUp"
         grow
@@ -152,9 +185,26 @@ async function handleLogout() {
         color="primary"
         height="64"
     >
-        <v-btn v-for="item in navItems" :key="item.title" :to="item.to" size="small">
+        <v-btn v-for="item in bottomNavItems" :key="item.title" :to="item.to" size="small">
             <v-icon :icon="item.icon" size="22" />
             <span class="text-caption">{{ item.short }}</span>
         </v-btn>
+        <v-menu v-if="overflowNavItems.length" location="top end">
+            <template #activator="{ props }">
+                <v-btn v-bind="props" size="small">
+                    <v-icon icon="mdi-dots-horizontal" size="22" />
+                    <span class="text-caption">Plus</span>
+                </v-btn>
+            </template>
+            <v-list density="comfortable">
+                <v-list-item
+                    v-for="item in overflowNavItems"
+                    :key="item.title"
+                    :prepend-icon="item.icon"
+                    :title="item.title"
+                    :to="item.to"
+                />
+            </v-list>
+        </v-menu>
     </v-bottom-navigation>
 </template>

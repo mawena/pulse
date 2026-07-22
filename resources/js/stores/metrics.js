@@ -1,16 +1,23 @@
 import { defineStore } from 'pinia';
 import http from '@/lib/http';
+import { getEcho } from '@/lib/echo';
 
-const HISTORY_SIZE = 30; // ~2min30 d'historique à 5s d'intervalle
+const HISTORY_SIZE = 60; // ~3min d'historique à 3s (WS) — 5min à 5s (polling)
 export const POLL_INTERVAL_MS = 5000;
 
 /**
- * Store des métriques temps réel : polling de /api/metrics + historique
- * pour les graphiques (CPU, RAM, débit réseau calculé par delta).
+ * Store des métriques temps réel.
+ *
+ * Transport principal : WebSocket (Reverb) — le backend échantillonne via
+ * `php artisan pulse:stream` et pousse les snapshots sur le canal `metrics`.
+ * Fallback automatique : polling HTTP de /api/metrics si le WS est
+ * indisponible (Reverb éteint, proxy sans websocket…), avec retour au WS
+ * dès qu'il redevient joignable.
  */
 export const useMetricsStore = defineStore('metrics', {
     state: () => ({
         snapshot: null,
+        transport: 'connecting', // connecting | ws | polling
         history: {
             timestamps: [],
             cpu: [],
@@ -18,37 +25,79 @@ export const useMetricsStore = defineStore('metrics', {
             netIn: [],
             netOut: [],
         },
-        lastNetwork: null, // { rxTotal, txTotal, at } — pour le calcul de débit
+        lastNetwork: null,
         netRate: { in: 0, out: 0 },
         error: null,
         _timer: null,
+        _channel: null,
     }),
 
     actions: {
+        /** Point d'entrée : tente le WebSocket, arme le fallback HTTP. */
+        start() {
+            if (this._channel) return;
+
+            // Premier snapshot immédiat en HTTP (sans attendre le 1er tick WS)
+            this.fetch();
+
+            const echo = getEcho();
+            this._channel = echo.private('metrics').listen('MetricsUpdated', (event) => {
+                this._apply(event.snapshot);
+            });
+
+            const connection = echo.connector.pusher.connection;
+            connection.bind('connected', () => {
+                this.transport = 'ws';
+                this._stopPollingTimer();
+            });
+            connection.bind('unavailable', () => this._fallbackToPolling());
+            connection.bind('failed', () => this._fallbackToPolling());
+            connection.bind('disconnected', () => {
+                if (this.transport === 'ws') this._fallbackToPolling();
+            });
+
+            // Si le WS n'est pas établi rapidement, on polle en attendant.
+            setTimeout(() => {
+                if (this.transport !== 'ws') this._fallbackToPolling();
+            }, 3000);
+        },
+
+        stop() {
+            this._stopPollingTimer();
+            if (this._channel) {
+                getEcho().leave('metrics');
+                this._channel = null;
+            }
+        },
+
         async fetch() {
             try {
                 const { data } = await http.get('/metrics');
-                this.snapshot = data.data;
-                this.error = null;
-                this._updateNetworkRate();
-                this._pushHistory();
-            } catch (e) {
+                this._apply(data.data);
+            } catch {
                 this.error = 'Impossible de récupérer les métriques.';
             }
         },
 
-        startPolling() {
+        _apply(snapshot) {
+            this.snapshot = snapshot;
+            this.error = null;
+            this._updateNetworkRate();
+            this._pushHistory();
+        },
+
+        _fallbackToPolling() {
             if (this._timer) return;
-            this.fetch();
+            this.transport = 'polling';
             this._timer = setInterval(() => this.fetch(), POLL_INTERVAL_MS);
         },
 
-        stopPolling() {
+        _stopPollingTimer() {
             clearInterval(this._timer);
             this._timer = null;
         },
 
-        /** Débit réseau = delta des compteurs cumulés entre deux pollings. */
+        /** Débit réseau = delta des compteurs cumulés entre deux snapshots. */
         _updateNetworkRate() {
             const now = Date.now();
             const rxTotal = this.snapshot.network.reduce((sum, i) => sum + i.rx_bytes, 0);

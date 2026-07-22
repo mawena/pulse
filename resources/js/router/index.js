@@ -38,10 +38,28 @@ const routes = [
                 meta: { permission: ['read', 'service'] },
             },
             {
+                path: 'system-services',
+                name: 'system-services',
+                component: () => import('@/pages/SystemServicesView.vue'),
+                meta: { permission: ['read', 'service'] },
+            },
+            {
+                path: 'jobs',
+                name: 'jobs',
+                component: () => import('@/pages/JobsView.vue'),
+                meta: { permission: ['read', 'system'] },
+            },
+            {
                 path: 'users',
                 name: 'users',
                 component: () => import('@/pages/UsersView.vue'),
                 meta: { permission: ['read', 'user'] },
+            },
+            {
+                path: 'roles',
+                name: 'roles',
+                component: () => import('@/pages/RolesView.vue'),
+                meta: { permission: ['manage', 'role'] },
             },
             {
                 path: 'audit-logs',

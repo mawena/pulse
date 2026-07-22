@@ -7,8 +7,8 @@ import { formatBytes, formatRate, formatUptime } from '@/lib/format';
 
 const metrics = useMetricsStore();
 
-onMounted(() => metrics.startPolling());
-onUnmounted(() => metrics.stopPolling());
+onMounted(() => metrics.start());
+onUnmounted(() => metrics.stop());
 
 const snap = computed(() => metrics.snapshot);
 

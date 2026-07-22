@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import http from '@/lib/http';
+import { disconnectEcho } from '@/lib/echo';
 
 /**
  * Store d'authentification — token Sanctum + utilisateur courant
@@ -73,6 +74,7 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await http.delete('/auth/logout');
             } finally {
+                disconnectEcho();
                 this.token = null;
                 this.user = null;
                 localStorage.removeItem('pulse_token');
