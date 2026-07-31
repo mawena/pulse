@@ -1,14 +1,13 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed } from 'vue';
 import ApexChart from '@/components/ApexChart.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useMetricsStore } from '@/stores/metrics';
 import { formatBytes, formatRate, formatUptime } from '@/lib/format';
 
+// Le flux est démarré par MainLayout (persistant sur toutes les pages) ;
+// le dashboard se contente de lire le store.
 const metrics = useMetricsStore();
-
-onMounted(() => metrics.start());
-onUnmounted(() => metrics.stop());
 
 const snap = computed(() => metrics.snapshot);
 

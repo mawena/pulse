@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useDisplay } from 'vuetify';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -10,6 +10,12 @@ const auth = useAuthStore();
 const metrics = useMetricsStore();
 const router = useRouter();
 const { mdAndUp } = useDisplay();
+
+// Le flux de métriques vit au niveau du layout (présent sur toutes les pages)
+// pour que l'indicateur LIVE de la topbar reste à jour partout, pas seulement
+// sur le dashboard. Le store est idempotent (start() ne s'abonne qu'une fois).
+onMounted(() => metrics.start());
+onUnmounted(() => metrics.stop());
 
 // Desktop : sidebar compactable en rail. Mobile : bottom navigation.
 const rail = ref(false);
