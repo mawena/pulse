@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
 import http from '@/lib/http';
 import { useAuthStore } from '@/stores/auth';
+import { useRealtime } from '@/lib/useRealtime';
 import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
@@ -10,7 +11,6 @@ const canManage = auth.can('manage', 'system');
 const services = ref([]);
 const loading = ref(false);
 const snackbar = ref({ show: false, text: '', color: 'success' });
-let timer = null;
 
 const confirmDialog = ref({ show: false, service: null, action: null, loading: false });
 
@@ -53,11 +53,15 @@ async function runAction() {
     }
 }
 
-onMounted(() => {
-    fetchStatus();
-    timer = setInterval(fetchStatus, 15000);
+// Temps réel : le backend pousse ServicesUpdated (~15 s) sur le canal
+// `services` — l'état LNMP est dans le champ `lnmp`.
+useRealtime({
+    channel: 'services',
+    event: 'ServicesUpdated',
+    immediate: fetchStatus,
+    onEvent: (event) => { services.value = event.lnmp; },
+    poll: fetchStatus,
 });
-onUnmounted(() => clearInterval(timer));
 </script>
 
 <template>

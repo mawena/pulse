@@ -2,20 +2,26 @@
 
 namespace App\Console\Commands;
 
+use App\Events\JobsUpdated;
 use App\Events\MetricsUpdated;
+use App\Events\ProcessesUpdated;
 use App\Events\ServicesUpdated;
+use App\Services\JobMonitorService;
 use App\Services\LnmpControlService;
+use App\Services\ProcessManagerService;
 use App\Services\SystemMetricsService;
 use App\Services\SystemServicesService;
 use Illuminate\Console\Command;
 use Throwable;
 
 /**
- * Boucle de streaming temps réel : échantillonne les métriques côté backend
- * et les diffuse via WebSocket (Reverb).
+ * Boucle de streaming temps réel : échantillonne l'état du serveur côté backend
+ * et le diffuse via WebSocket (Reverb). Chaque flux a sa propre cadence pour
+ * ne pas surcharger les sondes coûteuses (ps, systemctl) :
  *
- * - métriques système : chaque tick (défaut 3 s)
- * - services LNMP + systemd : un tick sur cinq (~15 s)
+ * - métriques système (/proc) : chaque tick (défaut 1 s en prod)
+ * - processus (ps) & jobs (DB) : ~2 s
+ * - services LNMP + systemd (systemctl) : ~15 s
  *
  * En production, lancé par une unité systemd (voir deploy/systemd/).
  */
@@ -31,18 +37,30 @@ class StreamMetrics extends Command
         SystemMetricsService $metrics,
         LnmpControlService $lnmp,
         SystemServicesService $services,
+        ProcessManagerService $processes,
+        JobMonitorService $jobs,
     ): int {
         $interval = max(0.2, (float) $this->option('interval'));
-        // Les services (systemctl) sont sondés toutes les ~15s quel que soit
-        // l'intervalle des métriques — inutile de marteler systemd.
+        // Chaque sonde a sa cadence : les commandes externes (ps, systemctl)
+        // sont plus coûteuses que les lectures /proc, inutile de les marteler.
+        $processesEvery = max(1, (int) round(2 / $interval));
+        $jobsEvery = max(1, (int) round(2 / $interval));
         $servicesEvery = max(1, (int) round(15 / $interval));
         $tick = 0;
 
-        $this->info("Streaming des métriques toutes les {$interval}s (Ctrl+C pour arrêter)…");
+        $this->info("Streaming temps réel toutes les {$interval}s (Ctrl+C pour arrêter)…");
 
         do {
             try {
                 MetricsUpdated::dispatch($metrics->snapshot());
+
+                if ($tick % $processesEvery === 0) {
+                    ProcessesUpdated::dispatch($processes->list());
+                }
+
+                if ($tick % $jobsEvery === 0) {
+                    JobsUpdated::dispatch($jobs->overview());
+                }
 
                 if ($tick % $servicesEvery === 0) {
                     ServicesUpdated::dispatch($lnmp->status(), $services->list());

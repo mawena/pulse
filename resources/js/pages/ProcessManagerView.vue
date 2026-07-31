@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
 import http from '@/lib/http';
 import { formatBytes } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
+import { useRealtime } from '@/lib/useRealtime';
 import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
@@ -13,7 +14,10 @@ const loading = ref(false);
 const search = ref('');
 const autoRefresh = ref(true);
 const snackbar = ref({ show: false, text: '', color: 'success' });
-let timer = null;
+
+// N'applique une mise à jour que si l'utilisateur n'a pas figé la liste
+// (auto-refresh actif) et qu'aucune modale de kill n'est ouverte.
+const canApply = () => autoRefresh.value && !killDialog.value.show;
 
 const killDialog = ref({ show: false, process: null, signal: 'TERM', loading: false });
 
@@ -68,13 +72,18 @@ async function confirmKill() {
     }
 }
 
-onMounted(() => {
-    fetchProcesses();
-    timer = setInterval(() => {
-        if (autoRefresh.value && !killDialog.value.show) fetchProcesses();
-    }, 10000);
+// Temps réel : le backend pousse ProcessesUpdated (~2 s) sur le canal `processes`.
+useRealtime({
+    channel: 'processes',
+    event: 'ProcessesUpdated',
+    immediate: fetchProcesses,
+    onEvent: (event) => {
+        if (canApply()) processes.value = event.processes;
+    },
+    poll: () => {
+        if (canApply()) fetchProcesses();
+    },
 });
-onUnmounted(() => clearInterval(timer));
 </script>
 
 <template>
@@ -85,7 +94,7 @@ onUnmounted(() => clearInterval(timer));
             icon="mdi-memory"
         >
             <v-switch
-                v-model="autoRefresh" label="Auto (10s)"
+                v-model="autoRefresh" label="Temps réel"
                 density="compact" hide-details color="primary"
             />
             <v-btn prepend-icon="mdi-refresh" variant="tonal" :loading="loading" @click="fetchProcesses">

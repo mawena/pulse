@@ -1,15 +1,13 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import http from '@/lib/http';
-import { getEcho } from '@/lib/echo';
+import { useRealtime } from '@/lib/useRealtime';
 import PageHeader from '@/components/PageHeader.vue';
 
 const services = ref([]);
 const loading = ref(false);
 const search = ref('');
 const stateFilter = ref(null);
-let subscribed = false;
-let timer = null;
 
 const headers = [
     { title: 'Unité', key: 'unit' },
@@ -48,20 +46,14 @@ async function fetchServices() {
     }
 }
 
-onMounted(() => {
-    fetchServices();
-    // Temps réel : le backend pousse ServicesUpdated (~15s) sur le canal `services`.
-    getEcho().private('services').listen('ServicesUpdated', (event) => {
-        services.value = event.services;
-    });
-    subscribed = true;
-    // Filet de sécurité si le WebSocket est indisponible.
-    timer = setInterval(fetchServices, 30000);
-});
-
-onUnmounted(() => {
-    if (subscribed) getEcho().leave('services');
-    clearInterval(timer);
+// Temps réel : le backend pousse ServicesUpdated (~15 s) sur le canal
+// `services` — la liste systemd complète est dans le champ `services`.
+useRealtime({
+    channel: 'services',
+    event: 'ServicesUpdated',
+    immediate: fetchServices,
+    onEvent: (event) => { services.value = event.services; },
+    poll: fetchServices,
 });
 </script>
 

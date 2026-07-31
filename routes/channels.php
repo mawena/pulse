@@ -15,3 +15,13 @@ Broadcast::channel('metrics', function ($user) {
 Broadcast::channel('services', function ($user) {
     return $user->hasPermissionTo('read', 'service');
 });
+
+// Liste des processus
+Broadcast::channel('processes', function ($user) {
+    return $user->hasPermissionTo('read', 'process');
+});
+
+// File de jobs Laravel
+Broadcast::channel('jobs', function ($user) {
+    return $user->hasPermissionTo('read', 'system');
+});

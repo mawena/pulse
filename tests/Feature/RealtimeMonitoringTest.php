@@ -1,6 +1,9 @@
 <?php
 
+use App\Events\JobsUpdated;
 use App\Events\MetricsUpdated;
+use App\Events\ProcessesUpdated;
+use App\Events\ServicesUpdated;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,7 +95,7 @@ describe('jobs monitoring', function () {
 
 describe('realtime broadcasting', function () {
     it('streams a metrics snapshot on the private metrics channel', function () {
-        Event::fake([MetricsUpdated::class]);
+        Event::fake([MetricsUpdated::class, ProcessesUpdated::class, JobsUpdated::class, ServicesUpdated::class]);
 
         $this->artisan('pulse:stream', ['--once' => true, '--interval' => 1])
             ->assertSuccessful();
@@ -101,6 +104,19 @@ describe('realtime broadcasting', function () {
             return $event->broadcastOn()->name === 'private-metrics'
                 && array_key_exists('cpu', $event->snapshot);
         });
+    });
+
+    it('streams processes, jobs and services on their private channels', function () {
+        Event::fake([MetricsUpdated::class, ProcessesUpdated::class, JobsUpdated::class, ServicesUpdated::class]);
+
+        // Au premier tick (--once), tous les flux sont diffusés.
+        $this->artisan('pulse:stream', ['--once' => true, '--interval' => 1])
+            ->assertSuccessful();
+
+        Event::assertDispatched(ProcessesUpdated::class, fn (ProcessesUpdated $e) => $e->broadcastOn()->name === 'private-processes');
+        Event::assertDispatched(JobsUpdated::class, fn (JobsUpdated $e) => $e->broadcastOn()->name === 'private-jobs'
+            && array_key_exists('counts', $e->overview));
+        Event::assertDispatched(ServicesUpdated::class, fn (ServicesUpdated $e) => $e->broadcastOn()->name === 'private-services');
     });
 
     it('authorizes the metrics channel for observers only via permission', function () {

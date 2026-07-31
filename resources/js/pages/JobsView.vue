@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
 import http from '@/lib/http';
 import { formatDateTime } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
+import { useRealtime } from '@/lib/useRealtime';
 import PageHeader from '@/components/PageHeader.vue';
 
 const auth = useAuthStore();
@@ -12,7 +13,6 @@ const tab = ref('pending');
 const overview = ref({ pending: [], failed: [], counts: { pending: 0, reserved: 0, failed: 0 } });
 const loading = ref(false);
 const snackbar = ref({ show: false, text: '', color: 'success' });
-let timer = null;
 
 const pendingHeaders = [
     { title: 'ID', key: 'id', width: 80 },
@@ -51,11 +51,14 @@ async function retryJob(job) {
     }
 }
 
-onMounted(() => {
-    fetchJobs();
-    timer = setInterval(fetchJobs, 5000);
+// Temps réel : le backend pousse JobsUpdated (~2 s) sur le canal `jobs`.
+useRealtime({
+    channel: 'jobs',
+    event: 'JobsUpdated',
+    immediate: fetchJobs,
+    onEvent: (event) => { overview.value = event.overview; },
+    poll: fetchJobs,
 });
-onUnmounted(() => clearInterval(timer));
 </script>
 
 <template>
