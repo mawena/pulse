@@ -1,7 +1,15 @@
 <?php
 
+use App\Http\Controllers\PortierController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Connexion via Portier (OpenID Connect), 404 si PORTIER_ACTIF=false.
+// Avant la route attrape-tout de la SPA.
+Route::get('auth/portier', [PortierController::class, 'depart'])->name('portier.depart');
+Route::get('auth/portier/retour', [PortierController::class, 'retour'])->name('portier.retour');
+
+// SPA Vue 3 : toutes les routes non-API sont gérées par vue-router.
+// La route nommée `login` évite un 500 (Route [login] not defined) quand un
+// client non authentifié sans header JSON tape une route protégée.
+Route::view('/login', 'app')->name('login');
+Route::view('/{any?}', 'app')->where('any', '.*');
