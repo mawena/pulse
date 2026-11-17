@@ -7,6 +7,8 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [0.1.0] - 2026-11-17
+
 ### Ajouté
 
 - Connexion facultative via Portier (OpenID Connect : code + PKCE S256, state, nonce,
@@ -22,5 +24,6 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 - README propre au projet à la place du README par défaut de Laravel.
 
-[Non publié]: https://github.com/mawena/pulse/compare/v0.0.1...HEAD
+[Non publié]: https://github.com/mawena/pulse/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mawena/pulse/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/mawena/pulse/releases/tag/v0.0.1
