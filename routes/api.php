@@ -10,7 +10,13 @@ use App\Http\Controllers\API\ProcessController;
 use App\Http\Controllers\API\RoleController;
 use App\Http\Controllers\API\SystemServicesController;
 use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\PortierController;
 use Illuminate\Support\Facades\Route;
+
+// Échange du code à usage unique donné au retour de Portier contre un jeton Sanctum
+Route::post('auth/portier/echange', [PortierController::class, 'echange'])
+    ->middleware('throttle:10,1')
+    ->name('auth.portier.echange');
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('auth/login', 'login');

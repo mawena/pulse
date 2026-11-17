@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import PulseLogo from '@/components/PulseLogo.vue';
@@ -12,6 +12,35 @@ const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 const error = ref(null);
+
+// Connexion via Portier (facultative, PORTIER_ACTIF dans .env).
+const portierActif = window.portierActif === true;
+const messagesPortier = {
+    etat: 'La connexion via Portier a expiré ou a été interrompue. Réessayez.',
+    refus: "Portier a refusé l'accès à Pulse.",
+    sans_email: "Votre compte Portier n'a pas d'adresse e-mail vérifiée.",
+    inscription:
+        "Aucun compte Pulse n'utilise votre adresse e-mail Portier. Les comptes sont créés par un administrateur.",
+    echec: 'La connexion via Portier a échoué. Réessayez ou utilisez votre mot de passe.',
+};
+
+onMounted(async () => {
+    const { portier, portier_erreur: portierErreur } = route.query;
+    if (!portier && !portierErreur) return;
+
+    // Retire le code (ou l'erreur) de l'adresse.
+    router.replace({ name: 'login' });
+    if (portierErreur) {
+        error.value = messagesPortier[String(portierErreur)] ?? messagesPortier.echec;
+        return;
+    }
+    try {
+        await auth.loginPortier(String(portier));
+        router.push({ name: 'dashboard' });
+    } catch {
+        error.value = messagesPortier.echec;
+    }
+});
 
 async function handleSubmit() {
     error.value = null;
@@ -75,6 +104,24 @@ async function handleSubmit() {
                             Se connecter
                         </v-btn>
                     </v-form>
+
+                    <template v-if="portierActif">
+                        <div class="d-flex align-center my-4">
+                            <v-divider />
+                            <span class="mx-3 text-caption text-medium-emphasis">ou</span>
+                            <v-divider />
+                        </div>
+                        <v-btn
+                            href="/auth/portier"
+                            variant="tonal"
+                            block
+                            size="large"
+                            prepend-icon="mdi-shield-lock-outline"
+                            :disabled="auth.loading"
+                        >
+                            Se connecter via Portier
+                        </v-btn>
+                    </template>
                 </v-card>
 
                 <p class="text-caption text-medium-emphasis text-center mt-4 font-data">

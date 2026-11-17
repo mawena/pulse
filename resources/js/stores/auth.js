@@ -46,6 +46,22 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        /**
+         * Connexion via Portier : échange le code à usage unique reçu au retour
+         * de Portier (/login?portier=…) contre le même jeton Sanctum que login().
+         */
+        async loginPortier(code) {
+            this.loading = true;
+            try {
+                const { data } = await http.post('/auth/portier/echange', { code });
+                this.token = data.data.userToken;
+                this.user = data.data.user;
+                localStorage.setItem('pulse_token', this.token);
+            } finally {
+                this.loading = false;
+            }
+        },
+
         async fetchUser() {
             const { data } = await http.get('/auth/data');
             this.user = data.data;

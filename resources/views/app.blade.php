@@ -12,6 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
 
+    <script>window.portierActif = @json((bool) config('services.portier.actif'))</script>
     @vite(['resources/js/app.js'])
 </head>
 <body>

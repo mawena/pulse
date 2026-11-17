@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    // Connexion facultative via Portier (OpenID Connect), en plus du mot de passe.
+    'portier' => [
+        'actif' => (bool) env('PORTIER_ACTIF', false),
+        'issuer' => env('PORTIER_ISSUER', 'https://portier.mawena.cloud'),
+        'client_id' => env('PORTIER_CLIENT_ID', 'pulse'),
+        'client_secret' => env('PORTIER_CLIENT_SECRET'),
+        // Vide : APP_URL + /auth/portier/retour
+        'redirect' => env('PORTIER_REDIRECT_URI'),
+    ],
+
 ];

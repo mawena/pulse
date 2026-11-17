@@ -51,6 +51,9 @@ Déployé sur **[pulse.mawena.cloud](https://pulse.mawena.cloud)**.
   (FormRequests, services, wrappers sudo), commandes exécutées sans shell,
   sudoers limité à deux wrappers dédiés, changement de mot de passe forcé à la
   première connexion.
+- 🛡️ **Connexion via Portier** (facultative, désactivée par défaut) : bouton
+  « Se connecter via Portier » (OpenID Connect, double facteur) en plus du mot
+  de passe, pour les comptes Pulse existants. Voir [`docs/portier.md`](docs/portier.md).
 
 ## Stack technique
 
@@ -117,6 +120,7 @@ Principales variables de `.env` (ne jamais committer leurs valeurs) :
 | `VITE_REVERB_APP_KEY`, `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, `VITE_REVERB_SCHEME` | Connexion WebSocket du navigateur (figées au `npm run build`) |
 | `PULSE_USE_SUDO`, `PULSE_SUDO_KILL`, `PULSE_SUDO_SERVICE` | Passage par les wrappers sudo (production) |
 | `PULSE_SERVICE_NGINX`, `PULSE_SERVICE_MYSQL`, `PULSE_SERVICE_PHP_FPM` | Noms des unités systemd supervisées |
+| `PORTIER_ACTIF`, `PORTIER_ISSUER`, `PORTIER_CLIENT_ID`, `PORTIER_CLIENT_SECRET`, `PORTIER_REDIRECT_URI` | Connexion facultative via Portier ([`docs/portier.md`](docs/portier.md)) ; `CACHE_STORE` doit alors être partagé (pas `array`) |
 
 Les variables `PULSE_*` sont lues par [`config/pulse.php`](config/pulse.php)
 (avec des valeurs par défaut) et ne figurent pas dans `.env.example`.
@@ -160,10 +164,11 @@ app/
 ├── Events/                 # Metrics/Processes/Services/JobsUpdated (diffusés via Reverb)
 ├── Http/Controllers/API/   # Auth, Users, Roles, Permissions, Metrics, Process, Lnmp,
 │                           # SystemServices, Jobs, AuditLog
+├── Http/Controllers/       # PortierController (connexion via Portier)
 ├── Http/Middleware/        # EnsurePermission (RBAC), AuditTrail
 ├── Http/Requests/          # KillProcessRequest, ServiceActionRequest
 ├── Services/               # SystemMetrics, ProcessManager, LnmpControl,
-│                           # SystemServices, JobMonitor
+│                           # SystemServices, JobMonitor, PortierOidc
 config/pulse.php            # services supervisés, whitelists, wrappers sudo
 routes/
 ├── api.php                 # API REST (préfixe /api)
@@ -174,6 +179,7 @@ resources/js/
 ├── stores/                 # auth (CASL), metrics (WebSocket + fallback polling)
 ├── lib/                    # http (axios), echo (Reverb), useRealtime, format
 ├── components/             # ApexChart, PulseLogo, PageHeader
+docs/portier.md             # connexion via Portier (OpenID Connect)
 deploy/                     # DEPLOYMENT.md, sudoers, wrappers, vhost nginx, unités systemd
 ai/                         # spécifications et suivi du projet
 ```
@@ -181,7 +187,8 @@ ai/                         # spécifications et suivi du projet
 ## Suivi du projet
 
 L'avancement détaillé phase par phase est tenu dans
-[`ai/tracker.md`](ai/tracker.md).
+[`ai/tracker.md`](ai/tracker.md) ; les évolutions suivantes dans
+[`ROADMAP.md`](ROADMAP.md).
 
 ## Licence
 

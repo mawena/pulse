@@ -7,6 +7,15 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Connexion facultative via Portier (OpenID Connect : code + PKCE S256, state, nonce,
+  jeton d'identité RS256 vérifié par JWKS) : bouton « Se connecter via Portier » sur `/login`
+  pour les comptes existants, en plus du mot de passe. Désactivée par défaut
+  (`PORTIER_ACTIF=false`, routes en 404). Pas d'inscription via Portier : Pulse n'a pas
+  d'inscription publique. Voir `docs/portier.md`.
+- `ROADMAP.md`.
+
 ## [0.0.1] - 2026-11-04
 
 ### Modifié
